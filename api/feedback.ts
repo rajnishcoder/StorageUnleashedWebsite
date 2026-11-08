@@ -49,10 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const source = payload.source || 'desktop-app';
     const systemInfo = payload.systemInfo || {};
 
-    // Check for Discord Webhook URL (Priority 1: instant & free)
-    const discordWebhookUrl =
-      process.env.DISCORD_WEBHOOK_URL ||
-      'https://discord.com/api/webhooks/1568897752967024774/MpOtG-zZrs9lt3hjZZBMhNWT3Wk7VNSh7mouOHqlJWxAETDaqdOrOJr6bgXivwpptj2F';
+    // Check for Discord Webhook URL from environment variables
+    const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL;
     const resendApiKey = process.env.RESEND_API_KEY;
 
     if (!discordWebhookUrl && !resendApiKey) {
