@@ -1,67 +1,129 @@
-import React from 'react';
-import { Bug, Lightbulb, MessageSquare, Star, ExternalLink, ArrowRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Bug, Lightbulb, MessageSquare, Mail, ArrowRight, X, CheckCircle2, AlertCircle, Loader2, Send } from 'lucide-react';
 import { track } from '@vercel/analytics';
 import './Feedback.css';
 
-const GithubIcon: React.FC<{ size?: number }> = ({ size = 20 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" />
-    <path d="M9 18c-4.51 2-5-2-7-2" />
-  </svg>
-);
-
 const FEEDBACK_CARDS = [
   {
+    type: 'bug' as const,
     icon: Bug,
     title: 'Report a Bug',
-    desc: 'Found a scanning error, incorrect size calculation, or UI issue? Open an issue with your system details.',
+    desc: 'Found a scanning error, incorrect size calculation, or UI issue? Send us details so we can fix it promptly.',
     color: '#f43f5e',
-    btnLabel: 'Report Bug',
-    url: 'https://github.com/rajnishcoder/StorageUnleashed/issues/new?title=%5BBug%5D+&labels=bug'
+    btnLabel: 'Report Bug'
   },
   {
+    type: 'feature' as const,
     icon: Lightbulb,
     title: 'Request a Feature',
-    desc: 'Have an idea for duplicate file detection, cloud drives, or custom cache cleaner rules? Suggest it!',
+    desc: 'Have an idea for duplicate file detection, cloud drives, or custom cache cleaner rules? We want to hear it!',
     color: '#f59e0b',
-    btnLabel: 'Suggest Feature',
-    url: 'https://github.com/rajnishcoder/StorageUnleashed/issues/new?title=%5BFeature+Request%5D+&labels=enhancement'
+    btnLabel: 'Suggest Feature'
   },
   {
+    type: 'general' as const,
     icon: MessageSquare,
     title: 'General Feedback',
-    desc: 'Share your overall experience or questions directly with the developer on our GitHub tracker.',
+    desc: 'Share your thoughts, praise, or experience directly with the developer—no sign-in or account needed.',
     color: '#38bdf8',
-    btnLabel: 'Send Feedback',
-    url: 'https://github.com/rajnishcoder/StorageUnleashed/issues/new?title=%5BFeedback%5D+'
+    btnLabel: 'Send Feedback'
   },
   {
-    icon: Star,
-    title: 'Star on GitHub',
-    desc: 'Show your appreciation and help more users discover Storage Unleashed by starring the project.',
-    color: '#eab308',
-    btnLabel: 'Star Repository',
-    url: 'https://github.com/rajnishcoder/StorageUnleashed'
+    type: 'email' as const,
+    icon: Mail,
+    title: 'Direct Email',
+    desc: 'Prefer plain email? Reach out directly to storageunleashed@gmail.com for partnerships or inquiries.',
+    color: '#10b981',
+    btnLabel: 'Email Developer',
+    mailto: 'mailto:storageunleashed@gmail.com?subject=[Storage%20Unleashed]%20Inquiry'
   }
 ];
 
 export const Feedback: React.FC = () => {
-  const handleFeedbackClick = (title: string) => {
+  const [activeModalType, setActiveModalType] = useState<'bug' | 'feature' | 'general' | null>(null);
+  const [title, setTitle] = useState('');
+  const [message, setMessage] = useState('');
+  const [email, setEmail] = useState('');
+  const [honeypot, setHoneypot] = useState('');
+
+  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleCardClick = (card: typeof FEEDBACK_CARDS[0]) => {
     try {
-      track('Feedback_Card_Click', { title });
+      track('Feedback_Card_Click', { title: card.title });
     } catch {
       // ignore
     }
 
-    if (typeof window !== 'undefined' && (window as any).gtag) {
+    if (card.type === 'email' && card.mailto) {
+      window.location.href = card.mailto;
+      return;
+    }
+
+    setActiveModalType(card.type as 'bug' | 'feature' | 'general');
+    setStatus('idle');
+    setErrorMessage('');
+    setTitle('');
+    setMessage('');
+    setEmail('');
+  };
+
+  const closeModal = () => {
+    setActiveModalType(null);
+    setStatus('idle');
+    setErrorMessage('');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || message.trim().length < 5) {
+      setErrorMessage('Please enter a feedback message with at least 5 characters.');
+      return;
+    }
+
+    setStatus('submitting');
+    setErrorMessage('');
+
+    try {
+      const payload = {
+        type: activeModalType || 'general',
+        title: title.trim() || undefined,
+        message: message.trim(),
+        email: email.trim() || undefined,
+        source: 'website',
+        _honeypot: honeypot,
+        systemInfo: {
+          userAgent: navigator.userAgent
+        }
+      };
+
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server responded with status ${response.status}`);
+      }
+
+      setStatus('success');
+      setTitle('');
+      setMessage('');
+      setEmail('');
       try {
-        (window as any).gtag('event', 'feedback_click', {
-          event_category: 'Community',
-          event_label: title
-        });
+        track('Feedback_Submitted', { type: activeModalType });
       } catch {
         // ignore
       }
+    } catch (err: any) {
+      console.error('[Feedback] Submission error:', err);
+      setStatus('error');
+      setErrorMessage(err.message || 'Could not send feedback. Please check your connection or email storageunleashed@gmail.com.');
     }
   };
 
@@ -69,10 +131,10 @@ export const Feedback: React.FC = () => {
     <section className="feedback-section" id="feedback">
       <div className="container">
         <div className="section-header">
-          <div className="section-tag">Community & Open Source</div>
+          <div className="section-tag">Direct Feedback</div>
           <h2 className="section-title">Support, Feedback & Bug Reports</h2>
           <p className="section-desc">
-            Storage Unleashed is 100% open source. Found a bug, have a feature idea, or want to give feedback? We welcome your contributions on GitHub.
+            Help shape the future of Storage Unleashed. No sign-in or GitHub account required—your input goes straight to the creator.
           </p>
         </div>
 
@@ -80,13 +142,18 @@ export const Feedback: React.FC = () => {
           {FEEDBACK_CARDS.map((card, idx) => {
             const Icon = card.icon;
             return (
-              <a
+              <div
                 key={idx}
-                href={card.url}
-                target="_blank"
-                rel="noreferrer"
-                className="feedback-card glass-card"
-                onClick={() => handleFeedbackClick(card.title)}
+                className="feedback-card glass-card clickable-card"
+                onClick={() => handleCardClick(card)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleCardClick(card);
+                  }
+                }}
               >
                 <div
                   className="feedback-icon-wrap"
@@ -104,36 +171,185 @@ export const Feedback: React.FC = () => {
                   <span>{card.btnLabel}</span>
                   <ArrowRight size={14} className="action-arrow" />
                 </div>
-              </a>
+              </div>
             );
           })}
         </div>
 
-        {/* GitHub Banner Callout */}
-        <div className="github-callout-banner glass-card">
+        {/* Email Direct Callout Banner */}
+        <div className="email-callout-banner glass-card">
           <div className="callout-left">
-            <div className="callout-github-icon">
-              <GithubIcon size={28} />
+            <div className="callout-mail-icon">
+              <Mail size={26} />
             </div>
             <div className="callout-text">
-              <div className="callout-title">rajnishcoder/StorageUnleashed</div>
+              <div className="callout-title">storageunleashed@gmail.com</div>
               <div className="callout-desc">
-                Public GitHub repository • MIT Licensed • Free for everyone
+                Direct developer email • Quick response • Bug reports & commercial inquiries welcome
               </div>
             </div>
           </div>
           <a
-            href="https://github.com/rajnishcoder/StorageUnleashed"
-            target="_blank"
-            rel="noreferrer"
+            href="mailto:storageunleashed@gmail.com?subject=[Storage%20Unleashed]%20Inquiry"
             className="btn-primary btn-callout"
-            onClick={() => handleFeedbackClick('GitHub Banner Callout')}
           >
-            <span>Visit GitHub Repo</span>
-            <ExternalLink size={15} />
+            <span>Compose Email</span>
+            <ArrowRight size={15} />
           </a>
         </div>
       </div>
+
+      {/* Interactive Web Feedback Modal */}
+      {activeModalType && (
+        <div className="web-feedback-modal-overlay" onClick={closeModal}>
+          <div className="web-feedback-modal-card glass-card" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="web-feedback-close-btn"
+              onClick={closeModal}
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+
+            {status === 'success' ? (
+              <div className="web-feedback-success-state">
+                <div className="web-feedback-success-icon">
+                  <CheckCircle2 size={44} color="#10b981" />
+                </div>
+                <h3 className="web-feedback-state-title">Thank You!</h3>
+                <p className="web-feedback-state-desc">
+                  Your message has been sent directly to the Storage Unleashed team.
+                  {email && ' We will reply directly to your email address soon.'}
+                </p>
+                <button
+                  type="button"
+                  className="btn-primary web-feedback-btn-done"
+                  onClick={closeModal}
+                >
+                  Done
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="web-feedback-header">
+                  <h3 className="web-feedback-title">
+                    {activeModalType === 'bug'
+                      ? 'Report a Bug'
+                      : activeModalType === 'feature'
+                      ? 'Suggest a Feature'
+                      : 'Send Feedback'}
+                  </h3>
+                  <p className="web-feedback-subtitle">
+                    Sent straight to storageunleashed@gmail.com — no account needed.
+                  </p>
+                </div>
+
+                {status === 'error' && (
+                  <div className="web-feedback-alert error">
+                    <AlertCircle size={16} />
+                    <div className="web-feedback-alert-text">
+                      {errorMessage}
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleSubmit} className="web-feedback-form">
+                  {/* Honeypot anti-spam */}
+                  <input
+                    type="text"
+                    name="_honeypot"
+                    value={honeypot}
+                    onChange={(e) => setHoneypot(e.target.value)}
+                    style={{ display: 'none' }}
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+
+                  <div className="web-feedback-field">
+                    <label className="web-feedback-label">
+                      Summary / Subject
+                    </label>
+                    <input
+                      type="text"
+                      className="web-feedback-input"
+                      placeholder={
+                        activeModalType === 'bug'
+                          ? 'e.g. Scan stops unexpectedly on macOS'
+                          : activeModalType === 'feature'
+                          ? 'e.g. Add dark mode treemap color schemes'
+                          : 'e.g. Feedback on recent performance'
+                      }
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      maxLength={120}
+                    />
+                  </div>
+
+                  <div className="web-feedback-field">
+                    <label className="web-feedback-label">
+                      Details <span className="req">*</span>
+                    </label>
+                    <textarea
+                      className="web-feedback-textarea"
+                      rows={4}
+                      placeholder={
+                        activeModalType === 'bug'
+                          ? 'Describe what happened and any steps to recreate the issue...'
+                          : 'Describe your idea or suggestion in detail...'
+                      }
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="web-feedback-field">
+                    <label className="web-feedback-label">
+                      Your Email <span className="opt">(Optional, if you would like a reply)</span>
+                    </label>
+                    <input
+                      type="email"
+                      className="web-feedback-input"
+                      placeholder="name@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="web-feedback-actions">
+                    <button
+                      type="button"
+                      className="web-feedback-btn-cancel"
+                      onClick={closeModal}
+                      disabled={status === 'submitting'}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-primary web-feedback-btn-submit"
+                      disabled={status === 'submitting' || !message.trim()}
+                    >
+                      {status === 'submitting' ? (
+                        <>
+                          <Loader2 size={15} className="spin-icon" />
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={15} />
+                          <span>Send Directly</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </section>
   );
 };

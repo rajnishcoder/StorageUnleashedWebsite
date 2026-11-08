@@ -19,8 +19,14 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.feedback-card.clickable-card {
+  cursor: pointer;
+  text-align: left;
+}
+
 .feedback-card:hover {
   transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .feedback-icon-wrap {
@@ -62,14 +68,15 @@
   transform: translateX(3px);
 }
 
-/* GitHub Callout Banner */
-.github-callout-banner {
+/* Email Callout Banner */
+.email-callout-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 24px 32px;
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.85));
-  border-color: rgba(56, 189, 248, 0.25);
+  border-color: rgba(16, 185, 129, 0.25);
+  border-radius: 16px;
 }
 
 .callout-left {
@@ -78,21 +85,21 @@
   gap: 16px;
 }
 
-.callout-github-icon {
+.callout-mail-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid var(--border-subtle);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #ffffff;
+  color: #10b981;
 }
 
 .callout-title {
-  font-size: 18px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 700;
   color: #ffffff;
   font-family: var(--font-mono);
 }
@@ -100,11 +107,261 @@
 .callout-desc {
   font-size: 13px;
   color: var(--text-muted);
+  margin-top: 2px;
 }
 
 .btn-callout {
   padding: 12px 20px;
   font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  border-radius: 10px;
+}
+
+/* Modal Overlay & Card */
+.web-feedback-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 22, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: webFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes webFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.web-feedback-modal-card {
+  position: relative;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  padding: 28px 24px 24px;
+  color: #f3f4f6;
+  text-align: left;
+  box-shadow:
+    0 24px 48px -12px rgba(0, 0, 0, 0.7),
+    0 0 40px rgba(56, 189, 248, 0.08);
+  animation: webCardScale 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes webCardScale {
+  from {
+    transform: scale(0.96) translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.web-feedback-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.web-feedback-close-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.web-feedback-header {
+  margin-bottom: 20px;
+}
+
+.web-feedback-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+}
+
+.web-feedback-subtitle {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.web-feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.web-feedback-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.web-feedback-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.web-feedback-label .req {
+  color: #f43f5e;
+}
+
+.web-feedback-label .opt {
+  font-weight: 400;
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.web-feedback-input,
+.web-feedback-textarea {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: #f8fafc;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.web-feedback-input:focus,
+.web-feedback-textarea:focus {
+  border-color: #38bdf8;
+  background: rgba(15, 23, 42, 0.95);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.web-feedback-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.web-feedback-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.web-feedback-btn-cancel {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9px;
+  padding: 10px 18px;
+  color: #cbd5e1;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.web-feedback-btn-cancel:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.web-feedback-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.web-feedback-btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.web-feedback-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 9px;
+  font-size: 13px;
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+
+.web-feedback-alert.error {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+/* Success state */
+.web-feedback-success-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 24px 8px 12px;
+}
+
+.web-feedback-success-icon {
+  margin-bottom: 16px;
+}
+
+.web-feedback-state-title {
+  font-size: 21px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px 0;
+}
+
+.web-feedback-state-desc {
+  font-size: 14px;
+  color: #94a3b8;
+  max-width: 400px;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.web-feedback-btn-done {
+  margin-top: 24px;
+  padding: 10px 28px;
+  font-size: 14px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.spin-icon {
+  animation: webFeedbackSpin 1s linear infinite;
+}
+
+@keyframes webFeedbackSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width: 1024px) {
@@ -125,13 +382,13 @@
   .feedback-card {
     padding: 20px 16px;
   }
-  .github-callout-banner {
+  .email-callout-banner {
     flex-direction: column;
     gap: 16px;
     align-items: flex-start;
     padding: 18px 16px;
   }
-  .callout-github-icon {
+  .callout-mail-icon {
     width: 40px;
     height: 40px;
   }
